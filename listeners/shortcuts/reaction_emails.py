@@ -10,15 +10,13 @@ def reaction_emails_callback(body: dict, ack: Ack, client: WebClient, logger: Lo
 
         channel_id = body["channel"]["id"]
         message_ts = body["message"]["ts"]
-        triggering_user_id = body["user"]["id"]
 
         result = client.reactions_get(channel=channel_id, timestamp=message_ts)
         reactions = result.get("message", {}).get("reactions", [])
 
         if not reactions:
-            client.chat_postEphemeral(
+            client.chat_postMessage(
                 channel=channel_id,
-                user=triggering_user_id,
                 text="No reactions found on this message.",
             )
             return
@@ -64,9 +62,8 @@ def reaction_emails_callback(body: dict, ack: Ack, client: WebClient, logger: Lo
         else:
             text = "No users found for reactions on this message."
 
-        client.chat_postEphemeral(
+        client.chat_postMessage(
             channel=channel_id,
-            user=triggering_user_id,
             text=text,
         )
     except Exception as e:

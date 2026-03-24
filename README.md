@@ -23,7 +23,7 @@ Before you can run the app, you'll need to store some environment variables.
 cp .env.example .env
 ```
 
-Edit `.env` with your tokens. The app loads this file automatically via `python-dotenv`, so no need to export variables manually.
+Edit `.env` with your tokens and export them as environment variables before running the app.
 
 ### Setup Your Local Project
 ```zsh
