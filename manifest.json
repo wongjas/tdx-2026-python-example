@@ -4,11 +4,11 @@
       "minor_version": 1
   },
   "display_information": {
-      "name": "tdx-2026-template"
+      "name": "Emoji Reaction Reader"
   },
   "features": {
       "bot_user": {
-          "display_name": "tdx-2026-template",
+          "display_name": "Emoji Reaction Reader",
           "always_online": false
       },
       "shortcuts": [
