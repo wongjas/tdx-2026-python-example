@@ -1,4 +1,5 @@
 pytest==9.0.2
 ruff==0.15.4
+python-dotenv
 slack-bolt==1.27.0
 slack-cli-hooks<1.0.0

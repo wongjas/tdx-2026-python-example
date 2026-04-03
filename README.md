@@ -1,11 +1,31 @@
-# Bolt for Python Template App
+# Reaction Emails — Bolt for Python
 
-This is a generic Bolt for Python template app used to build out Slack apps.
+A Slack app that adds a **Reaction Emails** message shortcut. When triggered on any message, it reads all emoji reactions, looks up each reactor's email address, and posts a summary back to the channel grouped by reaction.
 
-Before getting started, make sure you have a development workspace where you have permissions to install apps. If you don’t have one setup, go ahead and [create one](https://slack.com/create).
+Before getting started, make sure you have a development workspace where you have permissions to install apps. If you don't have one set up, go ahead and [create one](https://slack.com/create).
+
+## What It Does
+
+Right-click (or long-press) any message → **Message Shortcuts** → **Reaction Emails**.
+
+The app posts a message to the channel in this format:
+
+```
+*Reaction emails:*
+
+:thumbsup: @alice, @bob
+`alice@example.com, bob@example.com`
+
+:heart: @carol
+`carol@example.com`
+```
+
+If there are no reactions on the message, it posts `"No reactions found on this message."` instead.
+
 ## Installation
 
 #### Create a Slack App
+
 1. Open [https://api.slack.com/apps/new](https://api.slack.com/apps/new) and choose "From an app manifest"
 2. Choose the workspace you want to install the application to
 3. Copy the contents of [manifest.json](./manifest.json) into the text box that says `*Paste your manifest code here*` (within the JSON tab) and click *Next*
@@ -13,27 +33,34 @@ Before getting started, make sure you have a development workspace where you hav
 5. Click *Install to Workspace* and *Allow* on the screen that follows. You'll then be redirected to the App Configuration dashboard.
 
 #### Environment Variables
-Before you can run the app, you'll need to store some environment variables.
 
-1. Open your apps configuration page from this list, click **OAuth & Permissions** in the left hand menu, then copy the Bot User OAuth Token. You will store this in your environment as `SLACK_BOT_TOKEN`.
-2. Click **Basic Information** from the left hand menu and follow the steps in the App-Level Tokens section to create an app-level token with the `connections:write` scope. Copy this token. You will store this in your environment as `SLACK_APP_TOKEN`.
+Before you can run the app, you'll need two tokens set as environment variables.
+
+1. Click **OAuth & Permissions** in the left hand menu, then copy the **Bot User OAuth Token**. Store this as `SLACK_BOT_TOKEN`.
+2. Click **Basic Information**, scroll to **App-Level Tokens**, and create a token with the `connections:write` scope. Store this as `SLACK_APP_TOKEN`.
 
 ```zsh
-# Copy the example env file and fill in your tokens
 cp .env.example .env
 ```
 
-Edit `.env` with your tokens and export them as environment variables before running the app.
+Edit `.env` with your tokens. The app loads this file automatically via `python-dotenv`.
+
+#### Required Bot Scopes
+
+| Scope | Purpose |
+|---|---|
+| `commands` | Register the message shortcut |
+| `chat:write` | Post the reaction email summary |
+| `users:read` | Look up user profiles |
+| `users:read.email` | Read user email addresses |
 
 ### Setup Your Local Project
+
 ```zsh
-# Clone this project onto your machine
-git clone https://github.com/slack-samples/bolt-python-starter-template.git
-
 # Change into this project directory
-cd bolt-python-starter-template
+cd tdx-2026-template
 
-# Setup your python virtual environment
+# Set up your Python virtual environment
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -44,18 +71,21 @@ pip install -r requirements.txt
 python3 app.py
 ```
 
+The app runs over Socket Mode, so no public URL or ngrok tunnel is needed.
+
 #### Linting
+
 ```zsh
-# Run ruff from root directory for linting
+# Check for linting issues
 ruff check .
 
-# Run ruff from root directory for code formatting
+# Auto-format code
 ruff format .
 ```
 
 #### Testing
+
 ```zsh
-# Run pytest from root directory for unit testing
 pytest .
 ```
 
@@ -63,36 +93,21 @@ pytest .
 
 ### `manifest.json`
 
-`manifest.json` is a configuration for Slack apps. With a manifest, you can create an app with a pre-defined configuration, or adjust the configuration of an existing app.
+Defines the app's configuration: the `Reaction Emails` message shortcut (`reaction_emails_shortcut`), required OAuth scopes, and Socket Mode settings.
 
 ### `app.py`
 
-`app.py` is the entry point for the application and is the file you'll run to start the server. This project aims to keep this file as thin as possible, primarily using it as a way to route inbound requests.
+Entry point. Initialises the Bolt app with `SLACK_BOT_TOKEN`, registers all listeners, and starts the Socket Mode handler with `SLACK_APP_TOKEN`.
 
-### `/listeners`
+### `listeners/shortcuts/reaction_emails.py`
 
-Every incoming request is routed to a "listener". Inside this directory, we group each listener based on the Slack Platform feature used, so `/listeners/shortcuts` handles incoming [Shortcuts](https://api.slack.com/interactivity/shortcuts) requests, `/listeners/views` handles [View submissions](https://api.slack.com/reference/interaction-payloads/views#view_submission) and so on.
+Core logic for the shortcut:
 
-## App Distribution / OAuth
+1. Fetches all reactions on the target message via `reactions.get`
+2. Looks up every unique reactor's profile via `users.info` (deduplicated across emoji)
+3. Builds a message grouped by emoji — each section lists @-mentioned users and a copyable code block of their email addresses
+4. Posts the result to the channel with `chat.postMessage`
 
-Only implement OAuth if you plan to distribute your application across multiple workspaces. A separate `app_oauth.py` file can be found with relevant OAuth settings.
+### `tests/`
 
-When using OAuth, Slack requires a public URL where it can send requests. In this template app, we've used [`ngrok`](https://ngrok.com/download). Checkout [this guide](https://ngrok.com/docs#getting-started-expose) for setting it up.
-
-Start `ngrok` to access the app on an external network and create a redirect URL for OAuth. 
-
-```
-ngrok http 3000
-```
-
-This output should include a forwarding address for `http` and `https` (we'll use `https`). It should look something like the following:
-
-```
-Forwarding   https://3cb89939.ngrok.io -> http://localhost:3000
-```
-
-Navigate to **OAuth & Permissions** in your app configuration and click **Add a Redirect URL**. The redirect URL should be set to your `ngrok` forwarding address with the `slack/oauth_redirect` path appended. For example:
-
-```
-https://3cb89939.ngrok.io/slack/oauth_redirect
-```
+Unit tests covering the happy path, missing reactions, users without emails, failed user lookups, and deduplication behaviour.
