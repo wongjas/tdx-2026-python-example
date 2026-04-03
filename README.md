@@ -2,7 +2,7 @@
 
 A Slack app that adds a **Reaction Emails** message shortcut. When triggered on any message, it reads all emoji reactions, looks up each reactor's email address, and posts a summary back to the channel grouped by reaction.
 
-Before getting started, make sure you have a development workspace where you have permissions to install apps. If you don't have one set up, go ahead and [create one](https://slack.com/create).
+If you are at TDX 2026, please do not use this README and use the provided instructions on through the minihacks website.
 
 ## What It Does
 
